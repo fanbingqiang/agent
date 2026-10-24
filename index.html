@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>航班智能助手</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            background: #f0f4f8;
+            color: #000;
+        }
+
+        /* 左侧 */
+        .flight-panel {
+            width: 420px;
+            min-width: 420px;
+            background: #fff;
+            border-right: 1px solid #d0dbe8;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .flight-panel h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1a3a5c;
+        }
+        .flight-panel .subtitle {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 14px;
+        }
+        .flight-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .flight-card {
+            background: #f5f8fc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .flight-card:hover { border-color: #3b82f6; }
+        .flight-card .route {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .flight-card .info {
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            gap: 14px;
+        }
+        .flight-card .tags { margin-top: 6px; display: flex; gap: 6px; }
+        .tag {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        .tag.on-time { background: #e0f2e9; color: #1a7a4c; }
+        .tag.delayed { background: #fef3e2; color: #b45309; }
+        .tag.cancelled { background: #fce4e4; color: #b91c1c; }
+        .tag.subscribed { background: #e0e7ff; color: #3b4f8c; }
+        .tag.unsubscribed { background: #f0f0f0; color: #888; }
+
+        /* 右侧 */
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #d0dbe8;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-header-left h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a3a5c;
+        }
+        .model-badge {
+            font-size: 12px;
+            background: #eef2f7;
+            padding: 3px 10px;
+            border-radius: 12px;
+            color: #555;
+        }
+        .header-actions { display: flex; gap: 8px; }
+        .header-actions button {
+            padding: 5px 12px;
+            border: 1px solid #d0dbe8;
+            border-radius: 6px;
+            background: #fff;
+            color: #444;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .header-actions button:hover { background: #f5f7fa; }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .msg { max-width: 80%; padding: 10px 16px; border-radius: 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+        .msg.user {
+            align-self: flex-end;
+            background: #e8f0fe;
+            border-bottom-right-radius: 4px;
+        }
+        .msg.assistant {
+            align-self: flex-start;
+            background: #f5f7fa;
+            border-bottom-left-radius: 4px;
+        }
+        .msg.system {
+            align-self: center;
+            background: #fefce8;
+            border: 1px solid #fde68a;
+            font-size: 12px;
+            color: #92400e;
+            max-width: 90%;
+        }
+        .msg .tool-tag {
+            font-size: 11px;
+            background: #e0e7ff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+        .msg .rag-tag {
+            font-size: 11px;
+            background: #e0f2e9;
+            padding: 2px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 4px;
+        }
+
+        .chat-input-area {
+            padding: 14px 24px;
+            border-top: 1px solid #d0dbe8;
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid #d0dbe8;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            color: #000;
+        }
+        .chat-input-area input:focus { border-color: #3b82f6; }
+        .chat-input-area button {
+            padding: 10px 20px;
+            border: 1px solid #d0dbe8;
+            border-radius: 8px;
+            background: #fff;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .chat-input-area button:hover { background: #f5f7fa; border-color: #b0bcc8; }
+        .chat-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .empty-tip {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .empty-tip .hint { font-size: 12px; color: #bbb; }
+
+        .memories-bar {
+            padding: 8px 24px;
+            background: #fafbfc;
+            border-top: 1px solid #eef2f7;
+            font-size: 12px;
+            color: #888;
+            display: none;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .memories-bar .mem-item {
+            background: #eef2f7;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #d0dbe8; border-radius: 3px; }
+        .loading-dots::after {
+            content: "...";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+    </style>
+</head>
+<body>
+
+<div class="flight-panel">
+    <h2>航班记录</h2>
+    <div class="subtitle">点击航班查看详情或咨询</div>
+    <div class="flight-list" id="flightList"></div>
+</div>
+
+<div class="chat-panel">
+    <div class="chat-header">
+        <div class="chat-header-left">
+            <h2>航班助手</h2>
+            <span class="model-badge">deepseek</span>
+        </div>
+        <div class="header-actions">
+            <button onclick="clearHistory()">清空对话</button>
+            <button onclick="showMemories()">记忆</button>
+        </div>
+    </div>
+    <div class="messages" id="messages">
+        <div class="empty-tip">
+            <div>点击左侧航班开始咨询</div>
+            <div class="hint">或输入消息与助手对话</div>
+        </div>
+    </div>
+    <div class="memories-bar" id="memoriesBar"></div>
+    <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="输入消息，如：退订 CA1234 的通知..." />
+        <button id="sendBtn">发送</button>
+    </div>
+</div>
+
+<script>
+const API = "http://localhost:8001";
+let sessionId = "session_" + Date.now();
+let currentFlightId = null;
+
+// ========== 航班列表 ==========
+async function loadFlights() {
+    try {
+        const resp = await fetch(API + "/api/flights");
+        const data = await resp.json();
+        renderFlights(data.flights);
+    } catch (e) {
+        console.warn("后端未启动，使用本地数据", e);
+        renderFlights(getLocalFlights());
+    }
+}
+
+function getLocalFlights() {
+    return [
+        { id: "CA1234", from: "北京", to: "上海", departure: "08:00", arrival: "10:15", status: "on-time", date: "2026-06-20", subscribed: true },
+        { id: "MU2567", from: "上海", to: "广州", departure: "09:30", arrival: "12:00", status: "on-time", date: "2026-06-20", subscribed: true },
+        { id: "CZ3388", from: "广州", to: "成都", departure: "11:00", arrival: "13:50", status: "delayed", date: "2026-06-20", subscribed: true },
+        { id: "HU4411", from: "深圳", to: "北京", departure: "14:00", arrival: "17:00", status: "on-time", date: "2026-06-20", subscribed: true },
+        { id: "3U8899", from: "成都", to: "杭州", departure: "15:30", arrival: "18:10", status: "cancelled", date: "2026-06-20", subscribed: true },
+        { id: "MF6622", from: "厦门", to: "西安", departure: "16:45", arrival: "19:20", status: "on-time", date: "2026-06-20", subscribed: true },
+        { id: "ZH9090", from: "武汉", to: "三亚", departure: "18:00", arrival: "20:35", status: "delayed", date: "2026-06-20", subscribed: true },
+    ];
+}
+
+function statusText(s) {
+    return { "on-time": "准点", "delayed": "延误", "cancelled": "取消" }[s] || s;
+}
+
+function renderFlights(flights) {
+    const el = document.getElementById("flightList");
+    el.innerHTML = flights.map(f => {
+        const statusCls = f.status;
+        const subCls = f.subscribed ? "subscribed" : "unsubscribed";
+        const subTxt = f.subscribed ? "已订阅" : "未订阅";
+        return `<div class="flight-card" onclick="selectFlight('${f.id}')">
+            <div class="route">${f.from} → ${f.to}</div>
+            <div class="info">
+                <span>${f.date}</span>
+                <span>${f.departure}-${f.arrival}</span>
+                <span>${f.id}</span>
+            </div>
+            <div class="tags">
+                <span class="tag ${statusCls}">${statusText(f.status)}</span>
+                <span class="tag ${subCls}">${subTxt}</span>
+            </div>
+        </div>`;
+    }).join("");
+}
+
+function selectFlight(id) {
+    currentFlightId = id;
+    addMsg("system", "已选择航班 " + id + "，输入消息开始咨询");
+}
+
+// ========== 聊天 ==========
+async function sendMessage() {
+    const input = document.getElementById("chatInput");
+    const text = input.value.trim();
+    if (!text) return;
+
+    const emptyTip = document.querySelector(".empty-tip");
+    if (emptyTip) emptyTip.remove();
+
+    addMsg("user", text);
+    input.value = "";
+
+    const sendBtn = document.getElementById("sendBtn");
+    sendBtn.disabled = true;
+
+    // 加载状态
+    const loadingEl = addMsg("assistant", "思考中");
+
+    try {
+        const resp = await fetch(API + "/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                message: text,
+                session_id: sessionId,
+                flight_id: currentFlightId
+            })
+        });
+
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const data = await resp.json();
+
+        // 替换 loading 消息
+        loadingEl.remove();
+
+        let reply = data.reply;
+
+        // 如果有 tool call 信息
+        if (data.tool_calls && data.tool_calls.length > 0) {
+            const tc = data.tool_calls[0];
+            reply = "[Function Call] " + tc.tool_name + "\n" + reply;
+            addMsg("system", "调用工具: " + tc.tool_name + "(" + tc.arguments + ")\n结果: " + tc.output);
+            // 重新加载航班列表（订阅状态可能变了）
+            loadFlights();
+        }
+
+        addMsg("assistant", reply);
+    } catch (e) {
+        loadingEl.remove();
+        addMsg("system", "请求失败: " + e.message + "（请确保后端已启动）");
+    } finally {
+        sendBtn.disabled = false;
+    }
+}
+
+// ========== UI 辅助 ==========
+function addMsg(role, text) {
+    const el = document.getElementById("messages");
+    const div = document.createElement("div");
+    div.className = "msg " + role;
+    div.textContent = text;
+    el.appendChild(div);
+    el.scrollTop = el.scrollHeight;
+    return div;
+}
+
+function clearHistory() {
+    document.getElementById("messages").innerHTML = `<div class="empty-tip">
+        <div>点击左侧航班开始咨询</div>
+        <div class="hint">或输入消息与助手对话</div>
+    </div>`;
+}
+
+async function showMemories() {
+    try {
+        const resp = await fetch(API + "/api/memories/" + sessionId);
+        const data = await resp.json();
+        const mems = data.memories;
+        const bar = document.getElementById("memoriesBar");
+
+        if (Object.keys(mems).length === 0) {
+            bar.style.display = "flex";
+            bar.innerHTML = '<span style="color:#999">暂无记忆</span>';
+            setTimeout(() => { bar.style.display = "none"; }, 2000);
+            return;
+        }
+
+        bar.style.display = "flex";
+        bar.innerHTML = Object.entries(mems).map(([k, v]) =>
+            `<span class="mem-item">${k}: ${v}</span>`
+        ).join("");
+    } catch (e) {
+        alert("获取记忆失败: " + e.message);
+    }
+}
+
+// ========== 事件绑定 ==========
+document.getElementById("sendBtn").addEventListener("click", sendMessage);
+document.getElementById("chatInput").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+});
+
+// 初始化
+loadFlights();
+</script>
+</body>
+</html>

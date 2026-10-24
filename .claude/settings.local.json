@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip3 list *)",
+      "Bash(pip list *)",
+      "Bash(pip3 show *)",
+      "Bash(nohup python3 *)",
+      "Bash(echo \"PID=$!\")",
+      "Bash(python3 main.py)",
+      "Bash(curl -s http://localhost:8000/api/flights)",
+      "Bash(python3 -c \"import main; print\\('import ok'\\)\")",
+      "Bash(python3 -u main.py)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"print\\('hello'\\)\")",
+      "Bash(python -c \"print\\('hello'\\)\")",
+      "Bash(python main.py)",
+      "Bash(python -c ' *)",
+      "Bash(nohup python *)",
+      "Bash(python -m uvicorn main:app --host 0.0.0.0 --port 8000)",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8000\")",
+      "Bash(taskkill *)",
+      "Bash(python -m uvicorn main:app --host 0.0.0.0 --port 8001)",
+      "Bash(curl -s http://localhost:8001/api/flights)",
+      "Bash(curl *)",
+      "Bash(python *)"
+    ]
+  }
+}
